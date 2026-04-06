@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<h1>Notifications</h1>
+<form method="get" class="filter-bar">
+  <select name="status">
+    <option value="">All</option>
+    <option value="unread" {% if status_filter == "unread" %}selected{% endif %}>Unread</option>
+    <option value="read" {% if status_filter == "read" %}selected{% endif %}>Read</option>
+  </select>
+  <select name="sort">
+    <option value="newest" {% if sort == "newest" %}selected{% endif %}>Newest first</option>
+    <option value="oldest" {% if sort == "oldest" %}selected{% endif %}>Oldest first</option>
+  </select>
+  <button type="submit" class="btn-secondary btn-sm">Apply</button>
+</form>
+<ul class="notify-full">
+  {% for n in notifications %}
+    <li class="card {% if not n.read %}unread{% endif %}">
+      <strong>{{ n.title }}</strong>
+      <span class="tag">{{ n.get_kind_display }}</span>
+      <p>{{ n.body }}</p>
+      <p class="muted small">{{ n.created_at }}</p>
+      {% if not n.read %}
+        <a href="{% url 'clinic:notification_read' n.pk %}">Mark read</a>
+      {% endif %}
+    </li>
+  {% empty %}
+    <li class="muted">No notifications.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

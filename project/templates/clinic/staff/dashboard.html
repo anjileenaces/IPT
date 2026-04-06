@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Staff — Appointments{% endblock %}
+{% block content %}
+<h1>Staff control center</h1>
+<p class="muted">Monitor requests, approve or reject when the slot is full or the day is unavailable. Emergencies are listed first.</p>
+
+<nav class="staff-nav">
+  <a href="{% url 'clinic:staff_dashboard' %}">Appointments</a>
+  <a href="{% url 'clinic:staff_users' %}">Users</a>
+  {% if user.is_superuser %}
+    <a href="{% url 'clinic:staff_create_staff' %}">Add staff</a>
+    <a href="{% url 'clinic:staff_shop_closed' %}">Closed dates</a>
+  {% endif %}
+  <a href="{% url 'clinic:staff_reports' %}">Reports &amp; transactions</a>
+  <a href="/admin/">Django Admin</a>
+</nav>
+
+<form method="get" class="filter-bar">
+  <input type="search" name="q" value="{{ search_q }}" placeholder="Search user, pet, service">
+  <select name="status">
+    <option value="">All statuses</option>
+    <option value="pending" {% if status_filter == "pending" %}selected{% endif %}>Pending</option>
+    <option value="approved" {% if status_filter == "approved" %}selected{% endif %}>Approved</option>
+    <option value="rejected" {% if status_filter == "rejected" %}selected{% endif %}>Rejected</option>
+    <option value="completed" {% if status_filter == "completed" %}selected{% endif %}>Completed</option>
+  </select>
+  <label><input type="checkbox" name="emergency" value="1" {% if emergency_only %}checked{% endif %}> Emergency only</label>
+  <select name="sort">
+    <option value="date" {% if sort == "date" %}selected{% endif %}>Sort: date</option>
+    <option value="created" {% if sort == "created" %}selected{% endif %}>Sort: created</option>
+  </select>
+  <button type="submit" class="btn-secondary btn-sm">Apply</button>
+</form>
+<p>{{ pending_count }} pending in queue.</p>
+
+<section class="card chart-card">
+  <h2>Appointments per day (14 days)</h2>
+  <canvas id="staffChart" height="100"></canvas>
+</section>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>ID</th><th>Client</th><th>Pet</th><th>Service</th><th>Date</th><th>Time</th><th>Flags</th><th>Status</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in appointments %}
+        <tr class="{% if a.is_emergency %}row-emergency{% endif %}">
+          <td>{{ a.id }}</td>
+          <td>{{ a.user.username }}</td>
+          <td>{{ a.pet.name }}</td>
+          <td>{{ a.service.name }}</td>
+          <td>{{ a.appointment_date }}</td>
+          <td>{{ a.appointment_time }}</td>
+          <td>
+            {% if a.is_emergency or a.is_over_capacity or a.appointment_date in closed_dates %}
+              {% if a.is_emergency %}<span class="tag-emergency">Emergency</span>{% endif %}
+              {% if a.is_over_capacity %}<span class="tag-warn">Full slot</span>{% endif %}
+              {% if a.appointment_date in closed_dates %}<span class="tag-warn">Closed day</span>{% endif %}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>{{ a.get_status_display }}</td>
+          <td>
+            {% if a.status == "pending" %}
+              <form method="post" action="{% url 'clinic:staff_appointment_action' a.pk %}" class="stack-form staff-actions">{% csrf_token %}
+                <button name="action" value="approve" class="btn-primary btn-sm">Approve</button>
+                <label class="muted small">Decline reason (optional)</label>
+                <input type="text" name="rejection_reason" class="input" placeholder="e.g. slot full, shop closed" maxlength="500">
+                <button name="action" value="reject" class="btn-secondary btn-sm">Reject</button>
+              </form>
+            {% elif a.status == "approved" %}
+              <form method="post" action="{% url 'clinic:staff_appointment_action' a.pk %}" class="inline-form">{% csrf_token %}
+                <button name="action" value="complete" class="btn-secondary btn-sm">Complete</button>
+              </form>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="9">No appointments match filters.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{{ staff_chart_labels|json_script:"staff-labels" }}
+{{ staff_chart_values|json_script:"staff-values" }}
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const el = document.getElementById('staffChart');
+  if (!el || typeof Chart === 'undefined') return;
+  const labels = JSON.parse(document.getElementById('staff-labels').textContent);
+  const values = JSON.parse(document.getElementById('staff-values').textContent);
+  new Chart(el, {
+    type: 'line',
+    data: {
+      labels: labels.length ? labels : ['—'],
+      datasets: [{ label: 'Bookings', data: values.length ? values : [0], borderColor: '#2e8b57', tension: 0.2 }]
+    },
+    options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+});
+</script>
+{% endblock %}

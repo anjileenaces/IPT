@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Reports — PawCare{% endblock %}
+{% block content %}
+<h1>Reports &amp; analytics</h1>
+<nav class="staff-nav">
+  <a href="{% url 'clinic:staff_dashboard' %}">Appointments</a>
+  <a href="{% url 'clinic:staff_users' %}">Users</a>
+  {% if user.is_superuser %}
+    <a href="{% url 'clinic:staff_create_staff' %}">Add staff</a>
+    <a href="{% url 'clinic:staff_shop_closed' %}">Closed dates</a>
+  {% endif %}
+  <a href="{% url 'clinic:staff_reports' %}">Reports</a>
+</nav>
+
+<form method="get" class="filter-bar">
+  <label>From <input type="date" name="from" value="{{ report_from }}"></label>
+  <label>To <input type="date" name="to" value="{{ report_to }}"></label>
+  <button type="submit" class="btn-primary btn-sm">Update range</button>
+</form>
+<p><strong>Revenue (paid, in range):</strong> ${{ revenue_total }}</p>
+
+<div class="report-grid">
+  <section class="card chart-card">
+    <h2>Daily appointments</h2>
+    <canvas id="dailyChart" height="120"></canvas>
+  </section>
+  <section class="card chart-card">
+    <h2>Monthly revenue</h2>
+    <canvas id="revChart" height="120"></canvas>
+  </section>
+  <section class="card chart-card">
+    <h2>Patient visit trends (completed)</h2>
+    <canvas id="trendChart" height="120"></canvas>
+  </section>
+</div>
+
+<h2>Transactions / payment status</h2>
+<div class="table-wrap">
+  <table class="data-table">
+    <thead><tr><th>ID</th><th>Client</th><th>Pet</th><th>Amount</th><th>Status</th><th>Update</th></tr></thead>
+    <tbody>
+      {% for t in transactions %}
+        <tr>
+          <td>{{ t.id }}</td>
+          <td>{{ t.appointment.user.username }}</td>
+          <td>{{ t.appointment.pet.name }}</td>
+          <td>${{ t.amount }}</td>
+          <td>{{ t.get_payment_status_display }}</td>
+          <td>
+            <form method="post" action="{% url 'clinic:staff_transaction_update' t.pk %}" class="inline-form">{% csrf_token %}
+              <select name="payment_status">
+                {% for val,label in t.PaymentStatus.choices %}
+                  <option value="{{ val }}" {% if t.payment_status == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn-secondary btn-sm">Save</button>
+            </form>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">No transactions yet. Approve bookings to generate bills.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{{ daily_labels|json_script:"daily-labels" }}
+{{ daily_values|json_script:"daily-values" }}
+{{ rev_month_labels|json_script:"rev-labels" }}
+{{ rev_month_values|json_script:"rev-values" }}
+{{ trend_labels|json_script:"trend-labels" }}
+{{ trend_values|json_script:"trend-values" }}
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof Chart === 'undefined') return;
+  function bar(id, labelsId, valuesId, label, color) {
+    const c = document.getElementById(id);
+    if (!c) return;
+    const labels = JSON.parse(document.getElementById(labelsId).textContent);
+    const values = JSON.parse(document.getElementById(valuesId).textContent);
+    new Chart(c, {
+      type: 'bar',
+      data: { labels: labels.length ? labels : ['—'], datasets: [{ label, data: values.length ? values : [0], backgroundColor: color }] },
+      options: { scales: { y: { beginAtZero: true } } }
+    });
+  }
+  bar('dailyChart', 'daily-labels', 'daily-values', 'Appointments', 'rgba(46,139,87,0.6)');
+  bar('revChart', 'rev-labels', 'rev-values', 'Revenue', 'rgba(30,144,255,0.6)');
+  bar('trendChart', 'trend-labels', 'trend-values', 'Visits', 'rgba(139,69,19,0.6)');
+});
+</script>
+{% endblock %}

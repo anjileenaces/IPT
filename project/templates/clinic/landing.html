@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Welcome — PawCare{% endblock %}
+{% block content %}
+<section class="hero">
+  <div>
+    <h1>Care for every tail, whisker, and paw</h1>
+    <p class="lead">PawCare is your clinic hub: book visits, manage pet records, and get reminders — all in one place.</p>
+    <div class="hero-cta">
+      <a class="btn-primary" href="{% url 'clinic:book' %}">Book appointment</a>
+      {% if not user.is_authenticated %}
+        <a class="btn-secondary" href="{% url 'accounts:login' %}">Login</a>
+        <a class="btn-ghost" href="{% url 'accounts:register' %}">Register</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="card section">
+  <h2>Clinic overview</h2>
+  <p>We combine modern scheduling with compassionate care. Clients manage pets online; staff approve bookings, run reports, and track payments from the admin console.</p>
+</section>
+
+<section class="section">
+  <h2>Services offered</h2>
+  <form method="get" class="search-bar" action="{% url 'clinic:landing' %}">
+    <input type="search" name="q" value="{{ search_q }}" placeholder="Search services…" aria-label="Search services">
+    <button type="submit" class="btn-primary">Search</button>
+  </form>
+  <div class="grid-services">
+    {% for s in services %}
+      <article class="card service-card">
+        <h3>{{ s.name }}</h3>
+        <p>{{ s.description|default:"Professional care for your pet." }}</p>
+        <p class="meta">{{ s.duration_minutes }} min · ${{ s.base_price }}</p>
+      </article>
+    {% empty %}
+      <p>No services yet. Run <code>python manage.py seed_demo</code> after migrating.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

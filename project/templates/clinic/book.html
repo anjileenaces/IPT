@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Book appointment — PawCare{% endblock %}
+{% block content %}
+<h1>Book an appointment</h1>
+<p class="muted">Pick a pet, service, and time. If a slot is already full you can still submit a request — staff will approve or decline. Days when we are closed cannot be booked.</p>
+
+<div class="booking-layout">
+  <section class="card">
+    <h2>New booking</h2>
+    <form method="post" class="stack-form">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      {% for field in form %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field.errors }}
+          {{ field }}
+        </div>
+      {% endfor %}
+      <button type="submit" class="btn-primary">Confirm booking request</button>
+    </form>
+  </section>
+
+  <aside class="card">
+    <h2>Calendar & availability</h2>
+    <form method="get" class="inline-row">
+      <label>Preview date <input type="date" name="date" value="{{ preview_date }}"></label>
+      <button type="submit" class="btn-secondary btn-sm">Refresh</button>
+    </form>
+    <h3>Smart time suggestions</h3>
+    <p class="muted small">Least busy hours today (fewer bookings):</p>
+    <ul>
+      {% for hint in smart_hints %}
+        <li>{{ hint }}</li>
+      {% empty %}
+        <li class="muted">Pick a date to see suggestions.</li>
+      {% endfor %}
+    </ul>
+    <h3>Slots ({{ preview_date }})</h3>
+    <div class="slot-grid">
+      {% for t, ok, n in slot_status %}
+        <span class="slot {% if ok %}slot-ok{% else %}slot-full{% endif %}" title="{{ n }} booking(s)">
+          {{ t|time:"g:i A" }}
+        </span>
+      {% endfor %}
+    </div>
+    <p class="muted small">Green = available · Red = at capacity. Use “Emergency booking” on the form to jump the staff queue.</p>
+  </aside>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function () {
+  const dateInput = document.querySelector('input[name="appointment_date"]');
+  const preview = document.querySelector('aside input[name="date"]');
+  if (dateInput && preview && !preview.value) preview.value = dateInput.value || '{{ preview_date }}';
+})();
+</script>
+{% endblock %}

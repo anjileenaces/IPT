@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Closed dates{% endblock %}
+{% block content %}
+<h1>Shop closed dates</h1>
+<p class="muted">Clients cannot book on these days. Pending bookings on a closed day must be rejected or the date removed before approving.</p>
+
+<nav class="staff-nav">
+  <a href="{% url 'clinic:staff_dashboard' %}">Appointments</a>
+  <a href="{% url 'clinic:staff_users' %}">Users</a>
+  <a href="{% url 'clinic:staff_create_staff' %}">Add staff</a>
+  <a href="{% url 'clinic:staff_shop_closed' %}">Closed dates</a>
+  <a href="{% url 'clinic:staff_reports' %}">Reports</a>
+</nav>
+
+<div class="card narrow">
+  <h2>Add closed day</h2>
+  <form method="post" class="stack-form">{% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn-primary">Save</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Scheduled closures</h2>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Date</th><th>Reason</th><th></th></tr></thead>
+      <tbody>
+        {% for c in closed_dates %}
+          <tr>
+            <td>{{ c.date }}</td>
+            <td>{{ c.reason|default:"—" }}</td>
+            <td>
+              <form method="post" class="inline-form" onsubmit="return confirm('Remove this closed date?');">{% csrf_token %}
+                <input type="hidden" name="delete_id" value="{{ c.pk }}">
+                <button type="submit" class="btn-secondary btn-sm">Remove</button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3">No closed dates.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

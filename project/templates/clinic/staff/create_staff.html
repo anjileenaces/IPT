@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Create staff account{% endblock %}
+{% block content %}
+<h1>Create staff account</h1>
+<p class="muted">Only the main administrator can add staff. Staff cannot register themselves. New staff can log in here to monitor bookings and reminders.</p>
+
+<nav class="staff-nav">
+  <a href="{% url 'clinic:staff_dashboard' %}">Appointments</a>
+  <a href="{% url 'clinic:staff_users' %}">Users</a>
+  <a href="{% url 'clinic:staff_create_staff' %}">Add staff</a>
+  <a href="{% url 'clinic:staff_shop_closed' %}">Closed dates</a>
+  <a href="{% url 'clinic:staff_reports' %}">Reports</a>
+</nav>
+
+<div class="card narrow">
+  <form method="post" class="stack-form">{% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-error">{{ form.non_field_errors }}</div>
+    {% endif %}
+    {% for field in form %}
+      <div class="field">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field.errors }}
+        {{ field }}
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn-primary">Create staff user</button>
+  </form>
+</div>
+{% endblock %}

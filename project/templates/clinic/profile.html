@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Profile — PawCare{% endblock %}
+{% block content %}
+<h1>Your profile</h1>
+<p class="muted">Update details and profile picture (stored securely).</p>
+{% if user.profile_picture %}
+  <p><img src="{{ user.profile_picture.url }}" alt="" class="profile-preview"></p>
+{% endif %}
+<form method="post" enctype="multipart/form-data" class="stack-form narrow">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" class="btn-primary">Save profile</button>
+</form>
+{% endblock %}

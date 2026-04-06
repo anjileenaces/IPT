@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Login — PawCare{% endblock %}
+{% block content %}
+<div class="auth-card card narrow">
+  <h1>Login</h1>
+  <form method="post" class="stack-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="field"><label>Username</label>{{ form.username }}</div>
+    <div class="field"><label>Password</label>{{ form.password }}</div>
+    <button type="submit" class="btn-primary">Sign in</button>
+  </form>
+  <p><a href="{% url 'accounts:password_reset' %}">Forgot password?</a></p>
+  <p>No account? <a href="{% url 'accounts:register' %}">Register</a></p>
+</div>
+{% endblock %}

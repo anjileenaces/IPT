@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}My pets — PawCare{% endblock %}
+{% block content %}
+<h1>Pet records</h1>
+<form method="get" class="filter-bar">
+  <input type="search" name="q" value="{{ search_q }}" placeholder="Search name or breed">
+  <input type="text" name="species" value="{{ species_filter }}" placeholder="Species filter">
+  <select name="sort">
+    <option value="name" {% if sort == "name" %}selected{% endif %}>Sort: name</option>
+    <option value="species" {% if sort == "species" %}selected{% endif %}>Sort: species</option>
+  </select>
+  <button type="submit" class="btn-secondary btn-sm">Apply</button>
+</form>
+<a href="{% url 'clinic:pet_add' %}" class="btn-primary">Add pet</a>
+<ul class="pet-grid">
+  {% for p in pets %}
+    <li class="card">
+      <h3>{{ p.name }}</h3>
+      <p>{{ p.species }}{% if p.breed %} · {{ p.breed }}{% endif %}</p>
+      {% if p.vaccination_next_due %}<p class="muted small">Next vax: {{ p.vaccination_next_due }}</p>{% endif %}
+      <a href="{% url 'clinic:pet_edit' p.pk %}">Edit</a> ·
+      <a href="{% url 'clinic:pet_delete' p.pk %}">Delete</a>
+    </li>
+  {% empty %}
+    <li>No pets yet.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}PawCare Clinic{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="{% url 'clinic:landing' %}" class="logo">PawCare</a>
+      <nav class="nav-main">
+        <a href="{% url 'clinic:landing' %}">Home</a>
+        {% if not user.is_staff %}
+          <a href="{% url 'clinic:book' %}">Book</a>
+        {% endif %}
+        {% if user.is_authenticated %}
+          <a href="{% url 'clinic:dashboard' %}">Dashboard</a>
+          <a href="{% url 'clinic:pets' %}">Pets</a>
+          <a href="{% url 'clinic:notifications' %}">Notifications{% if unread_notification_count %}<span class="badge">{{ unread_notification_count }}</span>{% endif %}</a>
+          {% if user.is_staff %}
+            <a href="{% url 'clinic:staff_dashboard' %}">Staff</a>
+            {% if user.is_superuser %}
+              <a href="{% url 'clinic:staff_create_staff' %}">Add staff</a>
+              <a href="{% url 'clinic:staff_shop_closed' %}">Closed dates</a>
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      </nav>
+      <div class="header-actions">
+        <button type="button" class="btn-ghost" id="themeToggle" aria-label="Toggle dark mode">🌙</button>
+        {% if user.is_authenticated %}
+          <a href="{% url 'clinic:profile' %}" class="btn-ghost">Profile</a>
+          <form action="{% url 'accounts:logout' %}" method="post" class="inline-form">{% csrf_token %}
+            <button type="submit" class="btn-secondary">Logout</button>
+          </form>
+        {% else %}
+          <a href="{% url 'accounts:login' %}" class="btn-secondary">Login</a>
+          <a href="{% url 'accounts:register' %}" class="btn-primary">Register</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% if messages %}
+    <div class="container messages">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.level_tag }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <main id="main" class="container main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">PawCare Veterinary — Django + MySQL capstone demo</div>
+  </footer>
+  <script src="{% static 'js/app.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

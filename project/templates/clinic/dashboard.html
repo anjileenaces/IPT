@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — PawCare{% endblock %}
+{% block content %}
+<h1>Your dashboard</h1>
+<p class="muted">Upcoming visits, pets, and activity charts.</p>
+
+<div class="dashboard-grid">
+  <section class="card">
+    <div class="section-head">
+      <h2>Upcoming appointments</h2>
+      <a href="{% url 'clinic:book' %}" class="btn-primary btn-sm">Quick book</a>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Pet</th><th>Service</th><th>Date</th><th>Time</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for a in upcoming_appointments %}
+            <tr>
+              <td>{{ a.pet.name }}</td>
+              <td>{{ a.service.name }}</td>
+              <td>{{ a.appointment_date }}</td>
+              <td>{{ a.appointment_time }}</td>
+              <td>{% if a.is_emergency %}<span class="tag-emergency">Emergency</span> {% endif %}{{ a.get_status_display }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5">No upcoming appointments. <a href="{% url 'clinic:book' %}">Book one</a>.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="muted small">Sort and filter: use the booking page for new requests; staff manage approvals in Admin.</p>
+  </section>
+
+  <section class="card">
+    <h2>Pet records overview</h2>
+    <ul class="pet-list">
+      {% for p in pets %}
+        <li><a href="{% url 'clinic:pet_edit' p.pk %}">{{ p.name }}</a> — {{ p.species }}{% if p.vaccination_next_due %} · vax due {{ p.vaccination_next_due }}{% endif %}</li>
+      {% empty %}
+        <li><a href="{% url 'clinic:pet_add' %}">Add your first pet</a></li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Notifications</h2>
+    <ul class="notify-list">
+      {% for n in notifications %}
+        <li class="{% if not n.read %}unread{% endif %}"><strong>{{ n.title }}</strong><br><span class="muted small">{{ n.created_at }}</span></li>
+      {% empty %}
+        <li class="muted">No notifications yet.</li>
+      {% endfor %}
+    </ul>
+    <a href="{% url 'clinic:notifications' %}">View all</a>
+  </section>
+
+  <section class="card chart-card">
+    <h2>Visit history (completed)</h2>
+    <canvas id="visitsChart" height="120"></canvas>
+  </section>
+</div>
+{{ chart_labels|json_script:"chart-labels-data" }}
+{{ chart_values|json_script:"chart-values-data" }}
+{% endblock %}
+{% block extra_js %}
+<script>
+  const labels = JSON.parse(document.getElementById('chart-labels-data').textContent);
+  const values = JSON.parse(document.getElementById('chart-values-data').textContent);
+  document.addEventListener('DOMContentLoaded', function () {
+    const ctx = document.getElementById('visitsChart');
+    if (!ctx || typeof Chart === 'undefined') return;
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels.length ? labels : ['No data yet'],
+        datasets: [{
+          label: 'Completed visits',
+          data: values.length ? values : [0],
+          backgroundColor: 'rgba(46, 139, 87, 0.6)',
+        }]
+      },
+      options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Register — PawCare{% endblock %}
+{% block content %}
+<div class="auth-card card narrow">
+  <h1>Create account</h1>
+  <p class="muted small">Client accounts only. Staff logins are created by the administrator — not through this form.</p>
+  <form method="post" class="stack-form">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="field">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field.errors }}
+        {{ field }}
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn-primary">Register</button>
+  </form>
+  <p>Already have an account? <a href="{% url 'accounts:login' %}">Login</a></p>
+</div>
+{% endblock %}
